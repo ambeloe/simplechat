@@ -1,0 +1,79 @@
+
+
+all requests besides registration must have a valid token
+
+connection init:
+	literally just tls
+
+registration:
+	client sends username and (password or token)
+	if username exists:
+		if password is correct:
+			give client token
+		if token is valid:
+			return token login success status
+			tell client and reset state to start of registration
+	else
+		server asks for pubkey to complete registration
+		client sends desired password and pubkey
+
+
+authenticated requests:
+	encrypted messaging:
+		direct message sending:
+			client sends message packet
+			if recipient doesn't exist:
+				return error to client
+			else
+				store message until recipient gets messages
+				send messages in order
+
+		group message sending:
+			client queries server for members of group
+			client sends direct message to each member with group id appended
+
+		create group:
+			client sends group uid
+			if group exists:
+				server returns error
+			else
+				server returns ok
+
+		group member query:
+			client sends group uid
+			server responds with list of members
+
+		message check:
+			client sends check command
+			server responds with all messages cached for the user (can be zero)
+
+		pubkey request:
+			client sends request for key of uid
+			if user uid exists:
+				server responds with key
+			else
+				server responds with error
+
+		todo:add file transfer
+		file transfer:
+			file creation:
+				client sends encrypted file to server
+				server responds with uid of file and file password (for deletion/)
+
+			file getting:
+				client sends file uid to server
+				if file exists:
+					server responds with file
+				else
+					server returns error
+
+			file sending:
+				client sends whichever message type (dm / group dm) is appropriate containing the uuid of the file and password
+				recipients simply get file using provided uuid and decrypt with password sent in message to them
+
+			file deletion:
+				client requests to delete file
+				if client is creator of file:
+					server returns ok
+				else
+					server returns error

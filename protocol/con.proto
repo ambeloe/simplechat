@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "./pb";
+
+message mes {
+  bytes token = 1;
+  servReq s = 2;
+  repeated dmCont dmcs = 3;
+}
+
+message servReq {
+  uint32 command = 1;
+
+  uint64 groupID = 2;
+
+  //registration
+  string username = 16;
+  bytes password = 17;
+  bytes pubkey = 18;
+
+  uint64 uid = 19;
+}
+
+message servResp {
+  uint32 status = 1;
+
+  repeated dm dms = 2;
+
+  string token = 16;
+  bytes pubkey = 17;
+  repeated uint64 memberUIDs = 18;
+  string username = 19;
+  uint64 uid = 20;
+}
+
+message dmCont {
+  uint64 originUID = 1;
+  string originDomain = 2;
+
+  bool buffered = 3;
+
+  repeated dm m = 4;
+}
+
+message dm {
+  uint64 recipient = 1;
+  bytes data = 2;
+  uint64 groupID = 3;
+
+  uint64 origin = 4;
+}
