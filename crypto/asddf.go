@@ -23,25 +23,11 @@ func RandUint64() uint64 {
 	return binary.BigEndian.Uint64(uD)
 }
 
-func RandString(len int) string {
-	var str = make([]byte, len)
-	_, err := io.ReadAtLeast(rand.Reader, str, len)
+func RandToken(len int) []byte {
+	var tok = make([]byte, len)
+	_, err := io.ReadAtLeast(rand.Reader, tok, len)
 	if err != nil {
 		panic("error reading randomness")
 	}
-	//possibly optimize with stringbuilder if need be
-	return string(str)
-}
-
-func RandToken(len int) string {
-	var str = make([]byte, len)
-	_, err := io.ReadAtLeast(rand.Reader, str, len)
-	if err != nil {
-		panic("error reading randomness")
-	}
-	for i, _ := range str {
-		str[i] = str[i] >> 1
-	}
-	//possibly optimize with stringbuilder if need be
-	return string(str)
+	return tok
 }

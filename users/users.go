@@ -1,13 +1,16 @@
 package users
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 type User struct {
 	Username string
 	Uid      uint64
 
 	PasswordHash []byte
-	tokens       []string
+	tokens       [][]byte
 
 	//sm sync.Mutex
 	//ss *net.Conn
@@ -19,23 +22,23 @@ type User struct {
 
 // AddToken todo: optimize token addition and validation if necessary (possibly binary search)
 //adds token passed to it to the user and returns the same token
-func (u *User) AddToken(token string) string {
+func (u *User) AddToken(token []byte) []byte {
 	u.tokens = append(u.tokens, token)
 	return token
 }
 
-func (u *User) RemoveToken(token string) {
+func (u *User) RemoveToken(token []byte) {
 	for i, _ := range u.tokens {
-		if u.tokens[i] == token {
+		if bytes.Equal(u.tokens[i], token) {
 			u.tokens[i] = u.tokens[len(u.tokens)-1]
 			u.tokens = u.tokens[:len(u.tokens)-1]
 		}
 	}
 }
 
-func (u *User) ValidToken(token string) bool {
+func (u *User) ValidToken(token []byte) bool {
 	for _, t := range u.tokens {
-		if t == token {
+		if bytes.Equal(t, token) {
 			fmt.Println("valid token")
 			return true
 		}

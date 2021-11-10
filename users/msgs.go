@@ -10,8 +10,8 @@ type MsgStore interface {
 	json.Marshaler
 	json.Unmarshaler
 
-	QueueMsg(cont *pb.Dm)
-	DequeueMsg() *pb.Dm
+	QueueMsg(cont *pb.DM)
+	DequeueMsg() *pb.DM
 	Len() int
 }
 
@@ -28,11 +28,11 @@ func (m ListStore) MarshalJSON() ([]byte, error) {
 	if m.l.Len() == 0 {
 		return []byte("[]"), nil
 	}
-	arr := make([]pb.Dm, m.l.Len())
+	arr := make([]pb.DM, m.l.Len())
 	i := 0
 	e := m.l.Front()
 	for e != nil {
-		arr[i] = e.Value.(pb.Dm)
+		arr[i] = e.Value.(pb.DM)
 		i++
 		e = e.Next()
 	}
@@ -42,7 +42,7 @@ func (m ListStore) MarshalJSON() ([]byte, error) {
 
 func (m ListStore) UnmarshalJSON(b []byte) error {
 	m.l = list.New()
-	var arr []pb.Dm
+	var arr []pb.DM
 	err := json.Unmarshal(b, &arr)
 	if err != nil {
 		return err
@@ -53,12 +53,12 @@ func (m ListStore) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (m ListStore) QueueMsg(p *pb.Dm) {
+func (m ListStore) QueueMsg(p *pb.DM) {
 	m.l.PushBack(*p)
 }
 
-func (m ListStore) DequeueMsg() *pb.Dm {
-	return m.l.Remove(m.l.Front()).(*pb.Dm)
+func (m ListStore) DequeueMsg() *pb.DM {
+	return m.l.Remove(m.l.Front()).(*pb.DM)
 }
 
 func (m ListStore) Len() int {

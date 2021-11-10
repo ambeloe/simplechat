@@ -63,18 +63,18 @@ func clientHandler(c net.Conn, cert *tls.Certificate, s *users.Server) {
 		if req.S != nil {
 			cusr, err = s.GetUserByUsername(req.S.Username)
 			switch req.S.Command {
-			case protocol.CmdCheckUsernameAvailability:
+			case protocol.CmdRegCheckUsernameAvailability:
 				if err == nil {
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusUsernameTaken})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusUsernameTaken})
 				} else {
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusUsernameOK})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusUsernameOK})
 
 				}
 				break
-			case protocol.CmdRegister:
+			case protocol.CmdRegRegister:
 				if err != nil { //user doesn't exist; available to register
 					if len(req.S.Pubkey) != protocol.KeyLength { //key needs to exist and be the right length for curve25519
-						conn.SendPB(c, &pb.ServResp{Status: protocol.ErrInvalidKeyLength})
+						protocol.SResp(c, &pb.SResp{Status: protocol.ErrInvalidKeyLength})
 						continue
 					}
 					cusr.Username = req.S.Username
@@ -84,34 +84,34 @@ func clientHandler(c net.Conn, cert *tls.Certificate, s *users.Server) {
 					cusr.DHPubKey = req.S.Pubkey
 					t := cusr.AddToken(crypto.RandToken(protocol.TokenLength))
 					s.AddUser(cusr)
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK, Token: t})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK, Token: t})
 					goto regFin
 				} else { //user can't register with an existing username
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusUsernameTaken})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusUsernameTaken})
 				}
 				break
-			case protocol.CmdLogin:
+			case protocol.CmdRegLogin:
 				if err == nil { //user exists
 					if cusr.ValidToken(req.Token) {
-						conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK, Token: req.Token}) //token login
+						protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK, Token: req.Token}) //token login
 						goto regFin
 					} else if bytes.Equal(cusr.PasswordHash, crypto.PWHash(cusr.Uid, req.S.Password)) { //password login
-						t := cusr.AddToken(crypto.RandString(protocol.TokenLength))
+						t := cusr.AddToken(crypto.RandToken(protocol.TokenLength))
 						s.UpdateUser(cusr)
-						conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK, Token: t})
+						protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK, Token: t})
 						goto regFin
 					} else { //no login
-						conn.SendPB(c, &pb.ServResp{Status: protocol.ErrIncorrectCredentials})
+						protocol.SResp(c, &pb.SResp{Status: protocol.ErrIncorrectCredentials})
 					}
 				} else { //user doesn't exist
-					conn.SendPB(c, &pb.ServResp{Status: protocol.ErrNotFound})
+					protocol.SResp(c, &pb.SResp{Status: protocol.ErrNotFound})
 				}
 				break
 			default: //only registration/login commands are available
-				conn.SendPB(c, &pb.ServResp{Status: protocol.ErrInvalidCommand})
+				protocol.SResp(c, &pb.SResp{Status: protocol.ErrInvalidCommand})
 			}
 		} else { //prior to authenticating, user can't send messages
-			conn.SendPB(c, &pb.ServResp{Status: protocol.ErrUnauthorized})
+			protocol.SResp(c, &pb.SResp{Status: protocol.ErrUnauthorized})
 		}
 	}
 regFin:
@@ -127,21 +127,21 @@ regFin:
 		} else if cusr.ValidToken(req.Token) {
 			for _, dc := range req.Dmcs {
 				if dc.Buffered {
-					for _, dm := range dc.M {
+					for _, dm := range dc.D {
 						if u, err = s.GetUserByUID(dm.Recipient); err == nil {
 							dm.Origin = cusr.Uid
 							u.Msgs.QueueMsg(dm)
 						} else {
-							conn.SendPB(c, &pb.ServResp{Status: protocol.ErrNotFound})
+							protocol.SResp(c, &pb.SResp{Status: protocol.ErrNotFound})
 						}
 					}
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK})
 				} else {
-					for _, dm := range dc.M {
+					for _, dm := range dc.D {
 						if u, err = s.GetUserByUID(dm.Recipient); err == nil {
 							//todo: send directly
 						} else {
-							conn.SendPB(c, &pb.ServResp{Status: protocol.ErrNotFound})
+							protocol.SResp(c, &pb.SResp{Status: protocol.ErrNotFound})
 						}
 					}
 				}
@@ -149,28 +149,30 @@ regFin:
 			if req.S != nil {
 				switch req.S.Command {
 				case protocol.CmdGetUid: //get uid from username
-					if u, err = s.GetUserByUID(req.S.Uid); err == nil {
-						conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK, Uid: u.Uid})
+					u, err = s.GetUserByUsername(req.S.Username)
+					if err == nil {
+						protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK, Uid: u.Uid})
 					} else {
-						conn.SendPB(c, &pb.ServResp{Status: protocol.ErrNotFound})
+						protocol.SResp(c, &pb.SResp{Status: protocol.ErrNotFound})
 					}
 					break
 				case protocol.CmdGetUsername: //get username from uid
 					if u, err = s.GetUserByUID(req.S.Uid); err == nil { //user exists
-						conn.SendPB(c, &pb.ServResp{Status: protocol.StatusOK, Username: u.Username})
+						protocol.SResp(c, &pb.SResp{Status: protocol.StatusOK, Username: u.Username})
 					} else {
-						conn.SendPB(c, &pb.ServResp{Status: protocol.ErrNotFound})
+						protocol.SResp(c, &pb.SResp{Status: protocol.ErrNotFound})
 					}
 					break
+				case protocol.CmdGetMsgs:
 				case protocol.CmdLogout:
-					conn.SendPB(c, &pb.ServResp{Status: protocol.StatusGoodbye})
+					protocol.SResp(c, &pb.SResp{Status: protocol.StatusGoodbye})
 					return
 				default:
-					conn.SendPB(c, &pb.ServResp{Status: protocol.ErrInvalidCommand})
+					protocol.SResp(c, &pb.SResp{Status: protocol.ErrInvalidCommand})
 				}
 			}
 		} else {
-			conn.SendPB(c, &pb.ServResp{Status: protocol.ErrUnauthorized})
+			protocol.SResp(c, &pb.SResp{Status: protocol.ErrUnauthorized})
 		}
 	}
 }

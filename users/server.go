@@ -59,7 +59,8 @@ func (s *Server) GetUserByUID(uid uint64) (User, error) {
 }
 
 func (s *Server) GetUserByUsername(name string) (User, error) {
-	if i, is := s.usersByUsername.Load(name); is {
+	i, is := s.usersByUsername.Load(name)
+	if is {
 		return s.Users[i.(int)], nil
 	}
 	return User{}, errors.New("user not found")

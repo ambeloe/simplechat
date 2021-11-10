@@ -2,13 +2,20 @@ syntax = "proto3";
 
 option go_package = "./pb";
 
-message mes {
+//client sends
+message Mes {
   bytes token = 1;
-  servReq s = 2;
-  repeated dmCont dmcs = 3;
+  CReq s = 2;
+  repeated DCont dmcs = 3;
 }
 
-message servReq {
+//server sends
+message RMes {
+  SResp r = 1;
+  repeated DM d = 2;
+}
+
+message CReq {
   uint32 command = 1;
 
   uint64 groupID = 2;
@@ -21,31 +28,33 @@ message servReq {
   uint64 uid = 19;
 }
 
-message servResp {
+message SResp {
   uint32 status = 1;
 
-  repeated dm dms = 2;
+  repeated DM dms = 2;
+  uint32 remaining = 3;
 
-  string token = 16;
+  bytes token = 16;
   bytes pubkey = 17;
   repeated uint64 memberUIDs = 18;
   string username = 19;
   uint64 uid = 20;
 }
 
-message dmCont {
+message DCont{
   uint64 originUID = 1;
   string originDomain = 2;
 
   bool buffered = 3;
 
-  repeated dm m = 4;
+  repeated DM d = 4;
 }
 
-message dm {
+message DM {
   uint64 recipient = 1;
   bytes data = 2;
   uint64 groupID = 3;
 
   uint64 origin = 4;
+  bytes sign = 5;
 }

@@ -14,7 +14,7 @@ import (
 type Usr struct {
 	Username string
 
-	Token string
+	Token []byte
 
 	Key *crypto.X25519
 }
@@ -22,7 +22,7 @@ type Usr struct {
 var err error
 
 var c net.Conn
-var resp pb.ServResp
+var resp pb.RMes
 var u Usr
 
 func main() {
@@ -54,14 +54,14 @@ func login(s []string) {
 		fmt.Println("args: username password")
 		return
 	}
-	conn.SendPB(c, &pb.Mes{S: &pb.ServReq{Command: protocol.CmdLogin, Username: s[0], Password: []byte(s[1])}})
+	protocol.CReq(c, nil, &pb.CReq{Command: protocol.CmdRegLogin, Username: s[0], Password: []byte(s[1])})
 	conn.RecvPB(c, &resp)
-	if resp.Status != protocol.StatusOK {
-		fmt.Println("error logging in:", protocol.ErrToString(resp.Status))
+	if resp.R.Status != protocol.StatusOK {
+		fmt.Println("error logging in:", protocol.ErrToString(resp.R.Status))
 		return
 	}
 	u.Username = s[0]
-	u.Token = resp.Token
+	u.Token = resp.R.Token
 }
 
 func register(s []string) {
@@ -70,20 +70,20 @@ func register(s []string) {
 		return
 	}
 	u.Username = s[0]
-	conn.SendPB(c, &pb.Mes{S: &pb.ServReq{Command: protocol.CmdCheckUsernameAvailability, Username: u.Username}})
+	protocol.CReq(c, nil, &pb.CReq{Command: protocol.CmdRegCheckUsernameAvailability, Username: u.Username})
 	conn.RecvPB(c, &resp)
-	if resp.Status == protocol.StatusUsernameTaken {
+	if resp.R.Status == protocol.StatusUsernameTaken {
 		fmt.Println("that usename is taken")
 		return
 	}
 	u.Key, _ = crypto.NewPair(rand.Reader)
-	conn.SendPB(c, &pb.Mes{S: &pb.ServReq{Command: protocol.CmdRegister, Username: u.Username, Password: []byte(s[1]), Pubkey: u.Key.PubKey}})
+	protocol.CReq(c, nil, &pb.CReq{Command: protocol.CmdRegRegister, Username: u.Username, Password: []byte(s[1]), Pubkey: u.Key.PubKey})
 	conn.RecvPB(c, &resp)
-	if resp.Status != protocol.StatusOK {
-		fmt.Println("error registering:", protocol.ErrToString(resp.Status))
+	if resp.R.Status != protocol.StatusOK {
+		fmt.Println("error registering:", protocol.ErrToString(resp.R.Status))
 		return
 	}
-	u.Token = resp.Token
+	u.Token = resp.R.Token
 	fmt.Println("successfully registered", u.Username)
 }
 
@@ -92,15 +92,16 @@ func send(s []string) {
 		fmt.Println("args: recipient message")
 		return
 	}
-	conn.SendPB(c, &pb.Mes{S: &pb.ServReq{Command: protocol.CmdGetUsername, Username: s[0]}})
-	if resp.Status != protocol.StatusOK {
-		fmt.Println("error getting user uid:", protocol.ErrToString(resp.Status))
+	protocol.CReq(c, u.Token, &pb.CReq{Command: protocol.CmdGetUid, Username: s[0]})
+	conn.RecvPB(c, &resp)
+	if resp.R.Status != protocol.StatusOK {
+		fmt.Println("error getting user uid:", protocol.ErrToString(resp.R.Status))
 		return
 	}
-	conn.SendPB(c, protocol.SimpleDM(u.Token, resp.Uid, []byte(s[1])))
+	protocol.CSendBuffDM(c, u.Token, true, resp.R.Uid, []byte(s[1]), 0)
 	conn.RecvPB(c, &resp)
-	if resp.Status != protocol.StatusOK {
-		fmt.Println("error sending message:", protocol.ErrToString(resp.Status))
+	if resp.R.Status != protocol.StatusOK {
+		fmt.Println("error sending message:", protocol.ErrToString(resp.R.Status))
 		return
 	}
 }

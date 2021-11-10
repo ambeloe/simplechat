@@ -1,7 +1,7 @@
 package protocol
 
 const (
-	TokenLength = 64
+	TokenLength = 32
 	KeyLength   = 32
 	PWHashLen   = 32
 )
@@ -25,10 +25,11 @@ const (
 	_ = iota
 	CmdGetUid
 	CmdGetUsername
+	CmdGetMsgs
 
-	CmdCheckUsernameAvailability
-	CmdRegister
-	CmdLogin
+	CmdRegCheckUsernameAvailability
+	CmdRegRegister
+	CmdRegLogin
 	CmdLogout
 )
 
