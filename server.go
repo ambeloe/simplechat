@@ -122,7 +122,7 @@ regFin:
 		req.Reset()
 		err = conn.RecvPB(c, &req)
 		if err != nil {
-			fmt.Println("shat pant:", err)
+			fmt.Println("error getting packet from client:", err)
 			continue
 		} else if cusr.ValidToken(req.Token) {
 			for _, dc := range req.Dmcs {
@@ -164,7 +164,33 @@ regFin:
 					}
 					break
 				case protocol.CmdGetMsgs:
+					t := 0
+					m := make([]*pb.DM, 0)
+					l := cusr.Msgs.Len()
+					for i := 0; i < l; i++ {
+						d := cusr.Msgs.DequeueMsg()
+						m = append(m, d)
+						if t += len(d.Data); t > protocol.MaxResponseLength {
+							break
+						}
+					}
+					//a := protocol.MaxTries
+					//for ; a > 0; a-- {
+					//	conn.SendPB(c, &pb.RMes{R: &pb.SResp{Status: protocol.StatusDM, Dms: m, Remaining: uint32(cusr.Msgs.Len())}})
+					//	conn.RecvPB(c, &req)
+					//	if int(req.S.Addl) == len(m) {
+					//		protocol.SResp(c, &pb.SResp{Status: protocol.StatusDMGood})
+					//		break
+					//	}
+					//	fmt.Println("error sending dms to", c.RemoteAddr())
+					//}
+					//if a == 0 {
+					//	fmt.Println("gave up sending messages to", cusr.Username, "at", c.RemoteAddr())
+					//}
+					conn.SendPB(c, &pb.RMes{R: &pb.SResp{Status: protocol.StatusDM, Dms: m, Remaining: uint32(cusr.Msgs.Len())}})
+					break
 				case protocol.CmdLogout:
+					s.UpdateUser(cusr)
 					protocol.SResp(c, &pb.SResp{Status: protocol.StatusGoodbye})
 					return
 				default:

@@ -2,7 +2,6 @@ package users
 
 import (
 	"bytes"
-	"fmt"
 )
 
 type User struct {
@@ -39,7 +38,6 @@ func (u *User) RemoveToken(token []byte) {
 func (u *User) ValidToken(token []byte) bool {
 	for _, t := range u.tokens {
 		if bytes.Equal(t, token) {
-			fmt.Println("valid token")
 			return true
 		}
 	}

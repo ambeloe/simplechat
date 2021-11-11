@@ -12,6 +12,7 @@ type MsgStore interface {
 
 	QueueMsg(cont *pb.DM)
 	DequeueMsg() *pb.DM
+	PeekN(n int) []*pb.DM
 	Len() int
 }
 
@@ -58,7 +59,25 @@ func (m ListStore) QueueMsg(p *pb.DM) {
 }
 
 func (m ListStore) DequeueMsg() *pb.DM {
-	return m.l.Remove(m.l.Front()).(*pb.DM)
+	e := m.l.Remove(m.l.Front()).(pb.DM)
+	return &e
+}
+
+func (m ListStore) PeekN(n int) []*pb.DM {
+	if n > m.Len() || n < 1 {
+		n = m.Len()
+	}
+	var dd = make([]pb.DM, n)
+	e := m.l.Front()
+	for i := 0; i < n; i++ {
+		dd[i] = e.Value.(pb.DM)
+		e = e.Next()
+	}
+	pdd := make([]*pb.DM, n)
+	for i := 0; i < n; i++ {
+		pdd[i] = &dd[i]
+	}
+	return pdd
 }
 
 func (m ListStore) Len() int {

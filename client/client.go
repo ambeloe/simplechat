@@ -9,6 +9,7 @@ import (
 	"irchat/protocol"
 	"irchat/protocol/pb"
 	"net"
+	"strconv"
 )
 
 type Usr struct {
@@ -32,6 +33,7 @@ func main() {
 	a.Add("s", send)
 	a.Add("l", login)
 	a.Add("r", register)
+	a.Add("g", get)
 
 	a.Run()
 }
@@ -103,5 +105,20 @@ func send(s []string) {
 	if resp.R.Status != protocol.StatusOK {
 		fmt.Println("error sending message:", protocol.ErrToString(resp.R.Status))
 		return
+	}
+}
+
+func get([]string) {
+	protocol.CReq(c, u.Token, &pb.CReq{Command: protocol.CmdGetMsgs})
+	err = conn.RecvPB(c, &resp)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	//protocol.CReq(c, u.Token, &pb.CReq{Addl: uint64(len(resp.R.Dms))})
+	for _, d := range resp.R.Dms {
+		if d.Type == protocol.TypeDMPlaintext {
+			fmt.Println(strconv.FormatUint(d.Origin, 10)+":", string(d.Data))
+		}
 	}
 }

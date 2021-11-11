@@ -19,6 +19,7 @@ message CReq {
   uint32 command = 1;
 
   uint64 groupID = 2;
+  uint64 addl = 3;
 
   //registration
   string username = 16;
@@ -52,9 +53,11 @@ message DCont{
 
 message DM {
   uint64 recipient = 1;
-  bytes data = 2;
-  uint64 groupID = 3;
+  uint32 type = 2;
+  bytes data = 3;
+  uint64 groupID = 4;
 
-  uint64 origin = 4;
-  bytes sign = 5;
+  uint64 origin = 5;
+  uint32 time = 6;
+  bytes sign = 7;
 }

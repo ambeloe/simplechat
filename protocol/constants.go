@@ -4,12 +4,16 @@ const (
 	TokenLength = 32
 	KeyLength   = 32
 	PWHashLen   = 32
+
+	MaxResponseLength = 2 * 1000000
+	MaxTries          = 5
 )
 
 const (
 	_ = iota //0 is the default value in the protobuf
 	StatusOK
 	StatusDM
+	StatusDMGood
 	StatusUsernameOK
 	StatusUsernameTaken
 	StatusGoodbye
@@ -31,6 +35,11 @@ const (
 	CmdRegRegister
 	CmdRegLogin
 	CmdLogout
+)
+
+const (
+	_ = iota //0 is the default value in the protobuf
+	TypeDMPlaintext
 )
 
 func StatToString(stat uint32) string {

@@ -12,7 +12,7 @@ func CReq(c net.Conn, token []byte, r *pb.CReq) error {
 }
 
 func CSendBuffDM(c net.Conn, token []byte, buff bool, recipient uint64, data []byte, group uint64) error {
-	return conn.SendPB(c, &pb.Mes{Token: token, Dmcs: []*pb.DCont{{Buffered: buff, D: []*pb.DM{{Recipient: recipient, Data: data, GroupID: group}}}}})
+	return conn.SendPB(c, &pb.Mes{Token: token, Dmcs: []*pb.DCont{{Buffered: buff, D: []*pb.DM{{Recipient: recipient, Data: data, GroupID: group, Type: TypeDMPlaintext}}}}})
 }
 
 func SResp(c net.Conn, s *pb.SResp) error {
